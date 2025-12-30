@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Only For Nilaa ❤️</title>
+<style>
+body {
+    margin: 0;
+    background: black;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+canvas { display: block; }
+#shareBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #ff4d8d;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 16px;
+    box-shadow: 0 0 20px #ff4d8d;
+    cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+<audio id="music" src="lagu.mp3" loop autoplay></audio>
+<button id="shareBtn">Share 💌</button>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const audio = document.getElementById("music");
+const shareBtn = document.getElementById("shareBtn");
+
+function resize() {
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+}
+resize();
+addEventListener("resize", resize);
+
+// ===== AUDIO =====
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const source = audioCtx.createMediaElementSource(audio);
+const analyser = audioCtx.createAnalyser();
+analyser.fftSize = 256;
+source.connect(analyser);
+analyser.connect(audioCtx.destination);
+const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+// auto play (fallback)
+audio.play().catch(()=>{});
+
+// ===== HEART =====
+const text = "I love you";
+const name = "Nilaa";
+const points = [];
+const scale = 12;
+let t = 0;
+
+for (let i = -Math.PI; i <= Math.PI; i += 0.04) {
+    points.push({
+        x: 16 * Math.sin(i) ** 3,
+        y: 13 * Math.cos(i) - 5 * Math.cos(2*i) - 2 * Math.cos(3*i) - Math.cos(4*i)
+    });
+}
+
+// ===== FLOWER =====
+const petals = Array.from({ length: 40 }, () => ({
+    x: Math.random() * innerWidth,
+    y: Math.random() * innerHeight,
+    speed: 1 + Math.random() * 2
+}));
+
+// SHARE
+shareBtn.onclick = async () => {
+    const data = {
+        title: "Only For Nilaa ❤️",
+        text: "Aku bikin ini khusus buat kamu",
+        url: location.href
+    };
+    navigator.share ? navigator.share(data)
+    : (navigator.clipboard.writeText(data.url), alert("Link disalin 💌"));
+};
+
+function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    analyser.getByteFrequencyData(dataArray);
+    const bass = dataArray[5] / 255;
+
+    const cx = canvas.width/2;
+    const cy = canvas.height/2;
+    t += 0.05;
+    const pulse = 1 + bass * 0.6 + 0.05 * Math.sin(t);
+
+    ctx.fillStyle = `hsl(${330 + bass*50},100%,70%)`;
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.shadowBlur = 15;
+    ctx.font = "14px Arial";
+
+    points.forEach(p=>{
+        ctx.fillText(text, cx + p.x*scale*pulse, cy - p.y*scale*pulse);
+    });
+
+    ctx.font = `bold ${60 + bass*30}px Arial`;
+    ctx.fillStyle = "white";
+    ctx.shadowBlur = 30;
+    ctx.textAlign = "center";
+    ctx.fillText(name, cx, cy+20);
+
+    ctx.font = "20px Arial";
+    petals.forEach(p=>{
+        ctx.fillText("🌹", p.x, p.y);
+        p.y += p.speed;
+        if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+        }
+    });
+
+    requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
